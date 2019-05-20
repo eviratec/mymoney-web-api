@@ -14,11 +14,11 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-module.exports = function ListDb (db) {
+module.exports = function LogbookDb (db) {
   const bookshelf = db._bookshelf;
 
-  const List = bookshelf.Model.extend({
-    tableName: "lists",
+  const Logbook = bookshelf.Model.extend({
+    tableName: "logbooks",
     idAttribute: "Id",
     constructor: function() {
       bookshelf.Model.apply(this, arguments);
@@ -29,47 +29,27 @@ module.exports = function ListDb (db) {
     User: function() {
       return this.belongsTo(db.User, "OwnerId", "Id");
     },
-    ParentList: function() {
-      return this.belongsTo(db.List, "ParentId", "Id");
-    },
-    Category: function() {
-      return this.belongsTo(db.Category, "CategoryId", "Id");
-    },
-    Lists: function() {
-      return this.hasMany(db.List, "ParentId")
+    Transactions: function() {
+      return this.hasMany(db.Transaction, "LogbookId")
         .query(function(qb) {
           qb.whereNull('Deleted');
         });
     },
   });
 
-  db.List = List;
+  db.Logbook = Logbook;
 
-  function fetchListById (id) {
-    return List.where({"Id": id, "Deleted": null})
-      .fetch({withRelated: ["User", "ParentList", "Category", "Lists"]});
+  function fetchLogbookById (id) {
+    return Logbook.where({"Id": id, "Deleted": null})
+      .fetch({withRelated: ["User", "Lists"]});
   }
 
-  db.fetchListById = fetchListById;
+  db.fetchLogbookById = fetchLogbookById;
 
-  function fetchListsByOwnerId (userId) {
-    return List.where({"OwnerId": userId, "Deleted": null})
+  function fetchLogbooksByOwnerId (userId) {
+    return Logbook.where({"OwnerId": userId, "Deleted": null})
       .fetchAll();
   }
 
-  db.fetchListsByOwnerId = fetchListsByOwnerId;
-
-  function fetchListsByParentId (parentId) {
-    return List.where({"ParentId": parentId, "Deleted": null})
-      .fetchAll();
-  }
-
-  db.fetchListsByParentId = fetchListsByParentId;
-
-  function fetchListsByCategoryId (categoryId) {
-    return List.where({"CategoryId": categoryId, "Deleted": null})
-      .fetchAll();
-  }
-
-  db.fetchListsByCategoryId = fetchListsByCategoryId;
+  db.fetchLogbooksByOwnerId = fetchLogbooksByOwnerId;
 }

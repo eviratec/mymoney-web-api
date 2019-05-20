@@ -1,7 +1,8 @@
-CREATE TABLE `categories` (
+CREATE TABLE `logbooks` (
   `Id` varchar(36) NOT NULL,
   `OwnerId` varchar(36) NOT NULL,
   `Name` varchar(45) NOT NULL,
+  `Currency` enum('aud','usd','gbp','eur'),
   `Created` int(11) NOT NULL,
   `Deleted` int(11) DEFAULT NULL,
   PRIMARY KEY (`Id`),
