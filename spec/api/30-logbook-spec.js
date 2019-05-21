@@ -210,7 +210,7 @@ describe("LOGBOOK REST API", function () {
           };
           $testClient.$put(authorization, `/logbook/${logbookId}/currency`, data, function (err, res) {
             $testClient.$get(authorization, `/logbook/${logbookId}`, function (err, res) {
-              expect(res.d.Name).toBe("eur");
+              expect(res.d.Currency).toBe("eur");
               done();
             });
           });

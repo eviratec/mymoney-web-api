@@ -159,7 +159,7 @@ describe("TRANSACTION REST API", function () {
             $testClient.$get(authorization, `/logbook/${logbookId}`, function (err, res) {
               expect(res.statusCode).toBe(200);
               expect(res.d).toEqual(jasmine.objectContaining({
-                "Entries": jasmine.arrayContaining([
+                "Transactions": jasmine.arrayContaining([
                   jasmine.objectContaining({
                     "Id": transactionId,
                   }),
@@ -269,25 +269,13 @@ describe("TRANSACTION REST API", function () {
 
           describe("to null", function () {
 
-            it("RETURNS `HTTP/1.1 200 OK`", function (done) {
+            it("RETURNS `HTTP/1.1 400 BAD REQUEST`", function (done) {
               let data = {
                 newValue: null,
               };
               $testClient.$put(authorization, `/transaction/${transactionId}/occurred`, data, function (err, res) {
-                expect(res.statusCode).toBe(200);
+                expect(res.statusCode).toBe(400);
                 done();
-              });
-            });
-
-            it("UPDATES THE VALUE CORRECTLY", function (done) {
-              let data = {
-                newValue: null,
-              };
-              $testClient.$put(authorization, `/transaction/${transactionId}/occurred`, data, function (err, res) {
-                $testClient.$get(authorization, `/transaction/${transactionId}`, function (err, res) {
-                  expect(res.d.Occurred).toBe(null);
-                  done();
-                });
               });
             });
 
@@ -389,7 +377,7 @@ describe("TRANSACTION REST API", function () {
                 $testClient.$get(authorization, `/logbook/${logbookId}`, function (err, res) {
                   expect(res.statusCode).toBe(200);
                   expect(res.d).not.toEqual(jasmine.objectContaining({
-                    "Entries": jasmine.arrayContaining([
+                    "Transactions": jasmine.arrayContaining([
                       jasmine.objectContaining({
                         "Id": transactionId,
                       }),
