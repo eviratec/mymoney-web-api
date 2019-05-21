@@ -14,7 +14,7 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-describe("LIST REST API", function () {
+describe("TRANSACTION REST API", function () {
 
   let api;
 
@@ -47,51 +47,56 @@ describe("LIST REST API", function () {
     api.server.close(done);
   });
 
-  describe("/lists", function () {
+  describe("/transactions", function () {
 
-    let categoryData;
-    let category;
-    let categoryId;
+    let logbookData;
+    let logbook;
+    let logbookId;
 
-    let listData;
+    let transactionData;
+    let transactionOccurred;
 
     beforeEach(function (done) {
-      listData = {
-        Title: "My Test List",
+      transactionOccurred = Math.round((Date.now()/1000)-36000);
+      transactionData = {
+        Summary: "My Test Transaction",
+        Amount: 1238,
+        Occurred: transactionOccurred,
       };
-      categoryData = {
-        Title: "My Test Category",
+      logbookData = {
+        Name: "My Test Logbook",
+        Currency: "aud",
       };
-      $testClient.$post(authorization, `/categories`, categoryData, function (err, res) {
-        category = res.d;
-        categoryId = category.Id;
+      $testClient.$post(authorization, `/logbooks`, logbookData, function (err, res) {
+        logbook = res.d;
+        logbookId = logbook.Id;
 
-        listData.CategoryId = categoryId;
+        transactionData.LogbookId = logbookId;
 
         done();
       });
     });
 
-    describe("createList <POST> with valid parameters", function () {
+    describe("createTransaction <POST> with valid parameters", function () {
 
-      describe("top-level lists", function () {
+      describe("top-level transactions", function () {
 
         it("RETURNS `HTTP/1.1 403 Forbidden` WHEN `Authorization` HEADER IS NOT PROVIDED", function (done) {
-          $testClient.$post(null, `/lists`, listData, function (err, res) {
+          $testClient.$post(null, `/transactions`, transactionData, function (err, res) {
             expect(res.statusCode).toBe(403);
             done();
           });
         });
 
         it("RETURNS `HTTP/1.1 200 OK` WHEN `Authorization` HEADER IS PROVIDED", function (done) {
-          $testClient.$post(authorization, `/lists`, listData, function (err, res) {
+          $testClient.$post(authorization, `/transactions`, transactionData, function (err, res) {
             expect(res.statusCode).toBe(200);
             done();
           });
         });
 
         it("RETURNS AN OBJECT IN THE RESPONSE BODY FOR A SUCCESSFUL REQUEST", function (done) {
-          $testClient.$post(authorization, `/lists`, listData, function (err, res) {
+          $testClient.$post(authorization, `/transactions`, transactionData, function (err, res) {
             expect(res.statusCode).toBe(200);
             expect(res.d).toEqual(jasmine.any(Object));
             done();
@@ -99,7 +104,7 @@ describe("LIST REST API", function () {
         });
 
         it("RETURNS AN `Id` PROPERTY IN THE RESPONSE BODY OBJECT FOR A SUCCESSFUL REQUEST", function (done) {
-          $testClient.$post(authorization, `/lists`, listData, function (err, res) {
+          $testClient.$post(authorization, `/transactions`, transactionData, function (err, res) {
             expect(res.statusCode).toBe(200);
             expect(res.d).toEqual(jasmine.objectContaining({
               "Id": jasmine.any(String),
@@ -108,25 +113,55 @@ describe("LIST REST API", function () {
           });
         });
 
-        it("CREATES A LIST REACHABLE USING THE `Id` PROPERTY IN THE RESPONSE BODY", function (done) {
-          $testClient.$post(authorization, `/lists`, listData, function (err, res) {
-            let listId = res.d.Id;
-            $testClient.$get(authorization, `/list/${listId}`, function (err, res) {
+        it("CREATES A TRANSACTION REACHABLE USING THE `Id` PROPERTY IN THE RESPONSE BODY", function (done) {
+          $testClient.$post(authorization, `/transactions`, transactionData, function (err, res) {
+            let transactionId = res.d.Id;
+            $testClient.$get(authorization, `/transaction/${transactionId}`, function (err, res) {
               expect(res.statusCode).toBe(200);
               done();
             });
           });
         });
 
-        it("ADDS THE LIST TO THE CATEGORY'S LISTS PROPERTY", function (done) {
-          $testClient.$post(authorization, `/lists`, listData, function (err, res) {
-            let listId = res.d.Id;
-            $testClient.$get(authorization, `/category/${categoryId}`, function (err, res) {
+        it("SETS THE CORRECT VALUE FOR THE `Summary` PROPERTY", function (done) {
+          $testClient.$post(authorization, `/transactions`, transactionData, function (err, res) {
+            let transactionId = res.d.Id;
+            $testClient.$get(authorization, `/transaction/${transactionId}`, function (err, res) {
+              expect(res.d.Summary).toBe("My Test Transaction");
+              done();
+            });
+          });
+        });
+
+        it("SETS THE CORRECT VALUE FOR THE `Amount` PROPERTY", function (done) {
+          $testClient.$post(authorization, `/transactions`, transactionData, function (err, res) {
+            let transactionId = res.d.Id;
+            $testClient.$get(authorization, `/transaction/${transactionId}`, function (err, res) {
+              expect(res.d.Amount).toBe(1238);
+              done();
+            });
+          });
+        });
+
+        it("SETS THE CORRECT VALUE FOR THE `Occurred` PROPERTY", function (done) {
+          $testClient.$post(authorization, `/transactions`, transactionData, function (err, res) {
+            let transactionId = res.d.Id;
+            $testClient.$get(authorization, `/transaction/${transactionId}`, function (err, res) {
+              expect(res.d.Occurred).toBe(transactionOccurred);
+              done();
+            });
+          });
+        });
+
+        it("ADDS THE TRANSACTION TO THE LOGBOOK'S TRANSACTIONS PROPERTY", function (done) {
+          $testClient.$post(authorization, `/transactions`, transactionData, function (err, res) {
+            let transactionId = res.d.Id;
+            $testClient.$get(authorization, `/logbook/${logbookId}`, function (err, res) {
               expect(res.statusCode).toBe(200);
               expect(res.d).toEqual(jasmine.objectContaining({
-                "Lists": jasmine.arrayContaining([
+                "Entries": jasmine.arrayContaining([
                   jasmine.objectContaining({
-                    "Id": listId,
+                    "Id": transactionId,
                   }),
                 ]),
               }));
@@ -135,115 +170,14 @@ describe("LIST REST API", function () {
           });
         });
 
-        it("ADDS THE LIST TO THE CATEGORY'S LIST OF LISTS", function (done) {
-          $testClient.$post(authorization, `/lists`, listData, function (err, res) {
-            let listId = res.d.Id;
-            $testClient.$get(authorization, `/category/${categoryId}/lists`, function (err, res) {
+        it("ADDS THE TRANSACTION TO THE LOGBOOK'S LIST OF TRANSACTIONS", function (done) {
+          $testClient.$post(authorization, `/transactions`, transactionData, function (err, res) {
+            let transactionId = res.d.Id;
+            $testClient.$get(authorization, `/logbook/${logbookId}/transactions`, function (err, res) {
               expect(res.statusCode).toBe(200);
               expect(res.d).toEqual(jasmine.arrayContaining([
                 jasmine.objectContaining({
-                  "Id": listId,
-                }),
-              ]));
-              done();
-            });
-          });
-        });
-
-      });
-
-      describe("nested lists", function () {
-
-        let parentListData;
-        let parentList;
-        let parentListId;
-
-        let childListData;
-
-        beforeEach(function (done) {
-          childListData = {
-            Title: "My Test Child List",
-          };
-          parentListData = {
-            Title: "My Test Parent List",
-          };
-          $testClient.$post(authorization, `/lists`, parentListData, function (err, res) {
-            parentList = res.d;
-            parentListId = parentList.Id;
-
-            childListData.ParentId = parentListId;
-
-            done();
-          });
-        });
-
-        it("RETURNS `HTTP/1.1 403 Forbidden` WHEN `Authorization` HEADER IS NOT PROVIDED", function (done) {
-          $testClient.$post(null, `/lists`, childListData, function (err, res) {
-            expect(res.statusCode).toBe(403);
-            done();
-          });
-        });
-
-        it("RETURNS `HTTP/1.1 200 OK` WHEN `Authorization` HEADER IS PROVIDED", function (done) {
-          $testClient.$post(authorization, `/lists`, childListData, function (err, res) {
-            expect(res.statusCode).toBe(200);
-            done();
-          });
-        });
-
-        it("RETURNS AN OBJECT IN THE RESPONSE BODY FOR A SUCCESSFUL REQUEST", function (done) {
-          $testClient.$post(authorization, `/lists`, childListData, function (err, res) {
-            expect(res.statusCode).toBe(200);
-            expect(res.d).toEqual(jasmine.any(Object));
-            done();
-          });
-        });
-
-        it("RETURNS AN `Id` PROPERTY IN THE RESPONSE BODY OBJECT FOR A SUCCESSFUL REQUEST", function (done) {
-          $testClient.$post(authorization, `/lists`, childListData, function (err, res) {
-            expect(res.statusCode).toBe(200);
-            expect(res.d).toEqual(jasmine.objectContaining({
-              "Id": jasmine.any(String),
-            }));
-            done();
-          });
-        });
-
-        it("CREATES A LIST REACHABLE USING THE `Id` PROPERTY IN THE RESPONSE BODY", function (done) {
-          $testClient.$post(authorization, `/lists`, childListData, function (err, res) {
-            let listId = res.d.Id;
-            $testClient.$get(authorization, `/list/${listId}`, function (err, res) {
-              expect(res.statusCode).toBe(200);
-              done();
-            });
-          });
-        });
-
-        it("ADDS THE LIST TO THE PARENT'S LISTS PROPERTY", function (done) {
-          $testClient.$post(authorization, `/lists`, childListData, function (err, res) {
-            let listId = res.d.Id;
-            $testClient.$get(authorization, `/list/${parentListId}`, function (err, res) {
-              expect(res.statusCode).toBe(200);
-              expect(res.d).toEqual(jasmine.objectContaining({
-                "Lists": jasmine.arrayContaining([
-                  jasmine.objectContaining({
-                    "Id": listId,
-                  }),
-                ]),
-              }));
-              done();
-            });
-          });
-        });
-
-        it("ADDS THE LIST TO THE PARENTS'S LIST OF LISTS", function (done) {
-          $testClient.$post(authorization, `/lists`, childListData, function (err, res) {
-            let listId = res.d.Id;
-            $testClient.$get(authorization, `/list/${parentListId}/lists`, function (err, res) {
-              expect(res.statusCode).toBe(200);
-              expect(res.d).toEqual(jasmine.arrayContaining([
-                jasmine.objectContaining({
-                  "Id": listId,
+                  "Id": transactionId,
                 }),
               ]));
               done();
@@ -255,25 +189,25 @@ describe("LIST REST API", function () {
 
     });
 
-    describe("/list/:listId", function () {
+    describe("/transaction/:transactionId", function () {
 
-      describe("updating list properties", function () {
+      describe("updating transaction properties", function () {
 
-        let listId;
-        let listData;
+        let transactionId;
+        let transactionData;
 
         beforeEach(function (done) {
-          listData = {
-            Title: "Test List",
-            CategoryId: categoryId,
+          transactionData = {
+            Summary: "Test Transaction",
+            LogbookId: logbookId,
           };
-          $testClient.$post(authorization, `/lists`, listData, function (err, res) {
-            listId = res.d.Id;
+          $testClient.$post(authorization, `/transactions`, transactionData, function (err, res) {
+            transactionId = res.d.Id;
             done();
           });
         });
 
-        describe("changing the value for the 'Completed' property", function () {
+        describe("changing the value for the 'Occurred' property", function () {
 
           describe("to 'now'", function () {
 
@@ -281,7 +215,7 @@ describe("LIST REST API", function () {
               let data = {
                 newValue: "now",
               };
-              $testClient.$put(authorization, `/list/${listId}/completed`, data, function (err, res) {
+              $testClient.$put(authorization, `/transaction/${transactionId}/occurred`, data, function (err, res) {
                 expect(res.statusCode).toBe(200);
                 done();
               });
@@ -291,9 +225,41 @@ describe("LIST REST API", function () {
               let data = {
                 newValue: "now",
               };
-              $testClient.$put(authorization, `/list/${listId}/completed`, data, function (err, res) {
-                $testClient.$get(authorization, `/list/${listId}`, function (err, res) {
-                  expect(res.d.Completed).toEqual(jasmine.any(Number));
+              $testClient.$put(authorization, `/transaction/${transactionId}/occurred`, data, function (err, res) {
+                $testClient.$get(authorization, `/transaction/${transactionId}`, function (err, res) {
+                  expect(res.d.Occurred).toEqual(jasmine.any(Number));
+                  done();
+                });
+              });
+            });
+
+          });
+
+          describe("to a timestamp", function () {
+
+            let timestamp;
+
+            beforeEach(function () {
+              timestamp = Math.floor(Date.now()/1000);
+            });
+
+            it("RETURNS `HTTP/1.1 200 OK`", function (done) {
+              let data = {
+                newValue: timestamp,
+              };
+              $testClient.$put(authorization, `/transaction/${transactionId}/occurred`, data, function (err, res) {
+                expect(res.statusCode).toBe(200);
+                done();
+              });
+            });
+
+            it("UPDATES THE VALUE CORRECTLY", function (done) {
+              let data = {
+                newValue: timestamp,
+              };
+              $testClient.$put(authorization, `/transaction/${transactionId}/occurred`, data, function (err, res) {
+                $testClient.$get(authorization, `/transaction/${transactionId}`, function (err, res) {
+                  expect(res.d.Occurred).toBe(timestamp);
                   done();
                 });
               });
@@ -307,7 +273,7 @@ describe("LIST REST API", function () {
               let data = {
                 newValue: null,
               };
-              $testClient.$put(authorization, `/list/${listId}/completed`, data, function (err, res) {
+              $testClient.$put(authorization, `/transaction/${transactionId}/occurred`, data, function (err, res) {
                 expect(res.statusCode).toBe(200);
                 done();
               });
@@ -317,9 +283,9 @@ describe("LIST REST API", function () {
               let data = {
                 newValue: null,
               };
-              $testClient.$put(authorization, `/list/${listId}/completed`, data, function (err, res) {
-                $testClient.$get(authorization, `/list/${listId}`, function (err, res) {
-                  expect(res.d.Completed).toBe(null);
+              $testClient.$put(authorization, `/transaction/${transactionId}/occurred`, data, function (err, res) {
+                $testClient.$get(authorization, `/transaction/${transactionId}`, function (err, res) {
+                  expect(res.d.Occurred).toBe(null);
                   done();
                 });
               });
@@ -329,13 +295,13 @@ describe("LIST REST API", function () {
 
         });
 
-        describe("changing the value for the 'Name' property", function () {
+        describe("changing the value for the 'Summary' property", function () {
 
           it("RETURNS `HTTP/1.1 200 OK`", function (done) {
             let data = {
-              newValue: "New List Title",
+              newValue: "New Transaction Summary",
             };
-            $testClient.$put(authorization, `/list/${listId}/title`, data, function (err, res) {
+            $testClient.$put(authorization, `/transaction/${transactionId}/summary`, data, function (err, res) {
               expect(res.statusCode).toBe(200);
               done();
             });
@@ -343,11 +309,37 @@ describe("LIST REST API", function () {
 
           it("UPDATES THE VALUE CORRECTLY", function (done) {
             let data = {
-              newValue: "New List Title",
+              newValue: "New Transaction Summary",
             };
-            $testClient.$put(authorization, `/list/${listId}/title`, data, function (err, res) {
-              $testClient.$get(authorization, `/list/${listId}`, function (err, res) {
-                expect(res.d.Title).toBe("New List Title");
+            $testClient.$put(authorization, `/transaction/${transactionId}/summary`, data, function (err, res) {
+              $testClient.$get(authorization, `/transaction/${transactionId}`, function (err, res) {
+                expect(res.d.Summary).toBe("New Transaction Summary");
+                done();
+              });
+            });
+          });
+
+        });
+
+        describe("changing the value for the 'Amount' property", function () {
+
+          it("RETURNS `HTTP/1.1 200 OK`", function (done) {
+            let data = {
+              newValue: 1369,
+            };
+            $testClient.$put(authorization, `/transaction/${transactionId}/amount`, data, function (err, res) {
+              expect(res.statusCode).toBe(200);
+              done();
+            });
+          });
+
+          it("UPDATES THE VALUE CORRECTLY", function (done) {
+            let data = {
+              newValue: 1369,
+            };
+            $testClient.$put(authorization, `/transaction/${transactionId}/amount`, data, function (err, res) {
+              $testClient.$get(authorization, `/transaction/${transactionId}`, function (err, res) {
+                expect(res.d.Amount).toBe(1369);
                 done();
               });
             });
@@ -357,18 +349,19 @@ describe("LIST REST API", function () {
 
       });
 
-      describe("deleting top-level lists", function () {
+      describe("deleting transactions", function () {
 
-        let listId;
-        let listData;
+        let transactionId;
+        let transactionData;
 
         beforeEach(function (done) {
-          listData = {
-            Title: "Test List",
-            CategoryId: categoryId,
+          transactionData = {
+            Summary: "Test Transaction",
+            Amount: 1238,
+            LogbookId: logbookId,
           };
-          $testClient.$post(authorization, `/lists`, listData, function (err, res) {
-            listId = res.d.Id;
+          $testClient.$post(authorization, `/transactions`, transactionData, function (err, res) {
+            transactionId = res.d.Id;
             done();
           });
         });
@@ -376,7 +369,7 @@ describe("LIST REST API", function () {
         describe("as the resource owner", function () {
 
           it("RETURNS `HTTP/1.1 403 Forbidden` WHEN `Authorization` HEADER IS NOT PROVIDED", function (done) {
-            $testClient.$delete(null, `/list/${listId}`, function (err, res) {
+            $testClient.$delete(null, `/transaction/${transactionId}`, function (err, res) {
               expect(res.statusCode).toBe(403);
               done();
             });
@@ -385,20 +378,20 @@ describe("LIST REST API", function () {
           describe("successful request", function () {
 
             it("RETURNS `HTTP/1.1 200 OK` WHEN `Authorization` HEADER IS PROVIDED", function (done) {
-              $testClient.$delete(authorization, `/list/${listId}`, function (err, res) {
+              $testClient.$delete(authorization, `/transaction/${transactionId}`, function (err, res) {
                 expect(res.statusCode).toBe(200);
                 done();
               });
             });
 
-            it("REMOVES THE LIST FROM THE CATEGORY'S LISTS PROPERTY", function (done) {
-              $testClient.$delete(authorization, `/list/${listId}`, function (err, res) {
-                $testClient.$get(authorization, `/category/${categoryId}`, function (err, res) {
+            it("REMOVES THE TRANSACTION FROM THE LOGBOOK'S TRANSACTIONS PROPERTY", function (done) {
+              $testClient.$delete(authorization, `/transaction/${transactionId}`, function (err, res) {
+                $testClient.$get(authorization, `/logbook/${logbookId}`, function (err, res) {
                   expect(res.statusCode).toBe(200);
                   expect(res.d).not.toEqual(jasmine.objectContaining({
-                    "Lists": jasmine.arrayContaining([
+                    "Entries": jasmine.arrayContaining([
                       jasmine.objectContaining({
-                        "Id": listId,
+                        "Id": transactionId,
                       }),
                     ]),
                   }));
@@ -407,95 +400,13 @@ describe("LIST REST API", function () {
               });
             });
 
-            it("REMOVES THE LIST FROM THE CATEGORY'S LIST OF LISTS", function (done) {
-              $testClient.$delete(authorization, `/list/${listId}`, function (err, res) {
-                $testClient.$get(authorization, `/category/${categoryId}/lists`, function (err, res) {
+            it("REMOVES THE TRANSACTION FROM THE LOGBOOK'S LIST OF TRANSACTIONS", function (done) {
+              $testClient.$delete(authorization, `/transaction/${transactionId}`, function (err, res) {
+                $testClient.$get(authorization, `/logbook/${logbookId}/transactions`, function (err, res) {
                   expect(res.statusCode).toBe(200);
                   expect(res.d).not.toEqual(jasmine.arrayContaining([
                     jasmine.objectContaining({
-                      "Id": listId,
-                    }),
-                  ]));
-                  done();
-                });
-              });
-            });
-
-          });
-
-        });
-
-      });
-
-      describe("deleting nested lists", function () {
-
-        let parentListData;
-        let parentList;
-        let parentListId;
-
-        let listId;
-        let listData;
-
-        beforeEach(function (done) {
-          listData = {
-            Title: "My Test Child List",
-          };
-          parentListData = {
-            Title: "My Test Parent List",
-          };
-          $testClient.$post(authorization, `/lists`, parentListData, function (err, res) {
-            parentList = res.d;
-            parentListId = parentList.Id;
-
-            listData.ParentId = parentListId;
-            $testClient.$post(authorization, `/lists`, listData, function (err, res) {
-              listId = res.d.Id;
-              done();
-            });
-          });
-        });
-
-        describe("as the resource owner", function () {
-
-          it("RETURNS `HTTP/1.1 403 Forbidden` WHEN `Authorization` HEADER IS NOT PROVIDED", function (done) {
-            $testClient.$delete(null, `/list/${listId}`, function (err, res) {
-              expect(res.statusCode).toBe(403);
-              done();
-            });
-          });
-
-          describe("successful request", function () {
-
-            it("RETURNS `HTTP/1.1 200 OK` WHEN `Authorization` HEADER IS PROVIDED", function (done) {
-              $testClient.$delete(authorization, `/list/${listId}`, function (err, res) {
-                expect(res.statusCode).toBe(200);
-                done();
-              });
-            });
-
-            it("REMOVES THE LIST FROM THE PARENT'S LISTS PROPERTY", function (done) {
-              $testClient.$delete(authorization, `/list/${listId}`, function (err, res) {
-                $testClient.$get(authorization, `/list/${parentListId}`, function (err, res) {
-                  expect(res.statusCode).toBe(200);
-                  expect(res.d).not.toEqual(jasmine.objectContaining({
-                    "Lists": jasmine.arrayContaining([
-                      jasmine.objectContaining({
-                        "Id": listId,
-                      }),
-                    ]),
-                  }));
-                  done();
-                });
-              });
-            });
-
-            it("REMOVES THE LIST FROM THE PARENT'S LIST OF LISTS", function (done) {
-              $testClient.$delete(authorization, `/list/${listId}`, function (err, res) {
-                $testClient.$get(authorization, `/list/${parentListId}/lists`, function (err, res) {
-                  expect(res.statusCode).toBe(200);
-                  expect(res.d).not.toEqual(jasmine.arrayContaining([
-                    jasmine.objectContaining({
-                      "Id": listId,
+                      "Id": transactionId,
                     }),
                   ]));
                   done();
