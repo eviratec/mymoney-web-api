@@ -38,6 +38,7 @@ function createTransaction (mymoney) {
       OwnerId: req.authUser.get("Id"),
       LogbookId: req.body.LogbookId || null,
       Summary: req.body.Summary || "New Transaction",
+      Amount: req.body.Amount || 0,
       Occurred: occurred,
       Created: now,
     });
