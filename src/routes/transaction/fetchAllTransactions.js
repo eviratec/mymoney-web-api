@@ -14,7 +14,7 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-function fetchListById (mymoney) {
+function fetchAllTransactions (mymoney) {
 
   const api = mymoney.expressApp;
   const db = mymoney.db;
@@ -22,28 +22,21 @@ function fetchListById (mymoney) {
   const authz = mymoney.authz;
 
   return function (req, res) {
-    let listId = req.params.listId;
-    let userId = req.authUser.get("Id");
+    let ownerId = req.authUser.get("Id");
 
-    authz.verifyOwnership(req.path, userId)
-      .then(fetchList)
-      .then(sendResponse)
+    db.fetchTransactionsByOwnerId(ownerId)
+      .then(returnTransactions)
       .catch(onError);
 
-    function fetchList () {
-      return db.fetchListById(listId);
-    }
-
-    function sendResponse (category) {
-      res.status(200).send(category);
+    function returnTransactions (transactions) {
+      res.status(200).send(transactions);
     }
 
     function onError (err) {
-      console.log(err.stack);
-      res.sendStatus(404);
+      res.status(500).send({ ErrorMsg: err.message });
     }
   }
 
 }
 
-module.exports = fetchListById;
+module.exports = fetchAllTransactions;

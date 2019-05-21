@@ -14,43 +14,43 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-const v4uuid = require("uuid/v4");
-
-function createList (mymoney) {
+function changeTransactionSummaryById (mymoney) {
 
   const api = mymoney.expressApp;
   const db = mymoney.db;
   const events = mymoney.events;
   const authz = mymoney.authz;
 
-  const List = db.List;
-
   return function (req, res) {
-    let listId = v4uuid();
-    let list = List.forge({
-      Id: listId,
-      OwnerId: req.authUser.get("Id"),
-      ParentId: req.body.ParentId || null,
-      CategoryId: req.body.CategoryId || null,
-      Title: req.body.Title || "New List",
-      Created: Math.floor(Date.now()/1000),
-    });
+    let transactionId = req.params.transactionId;
+    let userId = req.authUser.get("Id");
+    let transactionUri = `/transaction/${transactionId}`;
 
-    list.save(null, {method: "insert"})
-      .then(onCreateSuccess)
+    authz.verifyOwnership(transactionUri, userId)
+      .then(fetchTransaction)
+      .then(changeTransactionSummary)
+      .then(returnSuccess)
       .catch(onError);
 
-    function onCreateSuccess (list) {
-      let uri = `/list/${listId}`;
-      events.emit("resource:created", uri, req.authUser.get("Id"));
-      res.returnNewObject(list);
+    function fetchTransaction () {
+      return db.fetchTransactionById(transactionId);
     }
 
-    function onError (err) {
-      res.status(400).send({ ErrorMsg: err.message });
+    function changeTransactionSummary (transaction) {
+      return transaction.save({
+        Summary: req.body.newValue || 'My Transaction',
+      });
+    }
+
+    function returnSuccess () {
+      res.status(200).send();
+    }
+
+    function onError () {
+      res.status(400).send();
     }
   }
 
 }
 
-module.exports = createList;
+module.exports = changeTransactionSummaryById;

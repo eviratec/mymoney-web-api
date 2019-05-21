@@ -14,7 +14,7 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-function deleteListById (mymoney) {
+function deleteLogbookById (mymoney) {
 
   const api = mymoney.expressApp;
   const db = mymoney.db;
@@ -22,22 +22,22 @@ function deleteListById (mymoney) {
   const authz = mymoney.authz;
 
   return function (req, res) {
-    let listId = req.params.listId;
+    let logbookId = req.params.logbookId;
     let userId = req.authUser.get("Id");
-    let listUri = `/list/${listId}`;
+    let logbookUri = `/logbook/${logbookId}`;
 
-    authz.verifyOwnership(listUri, userId)
-      .then(fetchList)
-      .then(setListDeletedNow)
+    authz.verifyOwnership(logbookUri, userId)
+      .then(fetchLogbook)
+      .then(setLogbookDeletedNow)
       .then(returnSuccess)
       .catch(onError);
 
-    function fetchList () {
-      return db.fetchListById(listId);
+    function fetchLogbook () {
+      return db.fetchLogbookById(logbookId);
     }
 
-    function setListDeletedNow (list) {
-      return list.save({
+    function setLogbookDeletedNow (logbook) {
+      return logbook.save({
         Deleted: Math.floor(Date.now()/1000),
       });
     }
@@ -53,4 +53,4 @@ function deleteListById (mymoney) {
 
 }
 
-module.exports = deleteListById;
+module.exports = deleteLogbookById;

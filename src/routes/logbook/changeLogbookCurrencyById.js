@@ -14,7 +14,7 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-function fetchAllCategories (mymoney) {
+function changeLogbookCurrencyById (mymoney) {
 
   const api = mymoney.expressApp;
   const db = mymoney.db;
@@ -22,21 +22,35 @@ function fetchAllCategories (mymoney) {
   const authz = mymoney.authz;
 
   return function (req, res) {
-    let ownerId = req.authUser.get("Id");
-    
-    db.fetchCategoriesByOwnerId(ownerId)
-      .then(returnCategories)
+    let logbookId = req.params.logbookId;
+    let userId = req.authUser.get("Id");
+    let logbookUri = `/logbook/${logbookId}`;
+
+    authz.verifyOwnership(logbookUri, userId)
+      .then(fetchLogbook)
+      .then(changeLogbookCurrency)
+      .then(returnSuccess)
       .catch(onError);
 
-    function returnCategories (categories) {
-      res.status(200).send(categories);
+    function fetchLogbook () {
+      return db.fetchLogbookById(logbookId);
     }
 
-    function onError (err) {
-      res.status(500).send({ ErrorMsg: err.message });
+    function changeLogbookCurrency (logbook) {
+      return logbook.save({
+        Currency: req.body.newValue || 'My Logbook',
+      });
+    }
+
+    function returnSuccess () {
+      res.status(200).send();
+    }
+
+    function onError () {
+      res.status(400).send();
     }
   }
 
 }
 
-module.exports = fetchAllCategories;
+module.exports = changeLogbookCurrencyById;

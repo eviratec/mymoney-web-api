@@ -14,43 +14,49 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-function deleteCategoryById (mymoney) {
+const v4uuid = require("uuid/v4");
+
+function createTransaction (mymoney) {
 
   const api = mymoney.expressApp;
   const db = mymoney.db;
   const events = mymoney.events;
   const authz = mymoney.authz;
 
-  return function (req, res) {
-    let categoryId = req.params.categoryId;
-    let userId = req.authUser.get("Id");
-    let categoryUri = `/category/${categoryId}`;
+  const Transaction = db.Transaction;
 
-    authz.verifyOwnership(categoryUri, userId)
-      .then(fetchCategory)
-      .then(setCategoryDeletedNow)
-      .then(returnSuccess)
+  return function (req, res) {
+    let now = Math.floor(Date.now()/1000);
+    let occurred = req.body.Occurred;
+    let transactionId = v4uuid();
+    let transaction;
+
+    occurred = 'number' === typeof occurred && occurred || now;
+
+    transaction = Transaction.forge({
+      Id: transactionId,
+      OwnerId: req.authUser.get("Id"),
+      LogbookId: req.body.LogbookId || null,
+      Summary: req.body.Summary || "New Transaction",
+      Occurred: occurred,
+      Created: now,
+    });
+
+    transaction.save(null, {method: "insert"})
+      .then(onCreateSuccess)
       .catch(onError);
 
-    function fetchCategory () {
-      return db.fetchCategoryById(categoryId);
+    function onCreateSuccess (transaction) {
+      let uri = `/transaction/${transactionId}`;
+      events.emit("resource:created", uri, req.authUser.get("Id"));
+      res.returnNewObject(transaction);
     }
 
-    function setCategoryDeletedNow (category) {
-      return category.save({
-        Deleted: Math.floor(Date.now()/1000),
-      });
-    }
-
-    function returnSuccess () {
-      res.status(200).send();
-    }
-
-    function onError () {
-      res.status(400).send();
+    function onError (err) {
+      res.status(400).send({ ErrorMsg: err.message });
     }
   }
 
 }
 
-module.exports = deleteCategoryById;
+module.exports = createTransaction;

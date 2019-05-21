@@ -17,6 +17,9 @@
 module.exports = function TransactionDb (db) {
   const bookshelf = db._bookshelf;
 
+  /**
+   * Transaction Model
+   */
   const Transaction = bookshelf.Model.extend({
     tableName: "transactions",
     idAttribute: "Id",
@@ -36,6 +39,9 @@ module.exports = function TransactionDb (db) {
 
   db.Transaction = Transaction;
 
+  /**
+   * Fetch Transaction by ID
+   */
   function fetchTransactionById (id) {
     return Transaction.where({"Id": id, "Deleted": null})
       .fetch({withRelated: ["User", "Logbook"]});
@@ -43,6 +49,9 @@ module.exports = function TransactionDb (db) {
 
   db.fetchTransactionById = fetchTransactionById;
 
+  /**
+   * Fetch Transactions by Owner ID
+   */
   function fetchTransactionsByOwnerId (userId) {
     return Transaction.where({"OwnerId": userId, "Deleted": null})
       .fetchAll();
@@ -50,6 +59,9 @@ module.exports = function TransactionDb (db) {
 
   db.fetchTransactionsByOwnerId = fetchTransactionsByOwnerId;
 
+  /**
+   * Fetch Transactions by Logbook ID
+   */
   function fetchTransactionsByLogbookId (categoryId) {
     return Transaction.where({"LogbookId": categoryId, "Deleted": null})
       .fetchAll();

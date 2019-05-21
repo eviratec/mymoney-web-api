@@ -14,7 +14,7 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-function changeListCompletedById (mymoney) {
+function changeTransactionOccurredById (mymoney) {
 
   const api = mymoney.expressApp;
   const db = mymoney.db;
@@ -22,40 +22,44 @@ function changeListCompletedById (mymoney) {
   const authz = mymoney.authz;
 
   return function (req, res) {
-    let listId = req.params.listId;
+    let transactionId = req.params.transactionId;
     let userId = req.authUser.get("Id");
-    let listUri = `/list/${listId}`;
+    let transactionUri = `/transaction/${transactionId}`;
 
-    authz.verifyOwnership(listUri, userId)
-      .then(fetchList)
-      .then(changeListCompleted)
+    authz.verifyOwnership(transactionUri, userId)
+      .then(fetchTransaction)
+      .then(changeTransactionOccurred)
       .then(returnSuccess)
       .catch(onError);
 
-    function fetchList () {
-      return db.fetchListById(listId);
+    function fetchTransaction () {
+      return db.fetchTransactionById(transactionId);
     }
 
-    function changeListCompleted (list) {
+    function changeTransactionOccurred (transaction) {
       if ("now" === req.body.newValue) {
-        return setListCompletedNow();
+        return setTransactionOccurredNow();
       }
 
       if (null === req.body.newValue) {
-        return clearListCompleted();
+        return clearTransactionOccurred();
       }
 
-      return setListCompletedNow();
-
-      function setListCompletedNow () {
-        return list.save({
-          Completed: Math.floor(Date.now()/1000),
+      if ('number' === typeof req.body.newValue) {
+        return transaction.save({
+          Occurred: req.body.newValue,
         });
       }
 
-      function clearListCompleted () {
-        return list.save({
-          Completed: null,
+      function setTransactionOccurredNow () {
+        return transaction.save({
+          Occurred: Math.floor(Date.now()/1000),
+        });
+      }
+
+      function clearTransactionOccurred () {
+        return transaction.save({
+          Occurred: null,
         });
       }
     }
@@ -71,4 +75,4 @@ function changeListCompletedById (mymoney) {
 
 }
 
-module.exports = changeListCompletedById;
+module.exports = changeTransactionOccurredById;

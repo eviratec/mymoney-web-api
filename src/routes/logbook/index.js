@@ -14,36 +14,34 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-function fetchListsByCatId (mymoney) {
-
+function addLogbookRoutes (mymoney) {
   const api = mymoney.expressApp;
-  const db = mymoney.db;
-  const events = mymoney.events;
-  const authz = mymoney.authz;
 
-  return function (req, res) {
-    let categoryId = req.params.categoryId;
-    let userId = req.authUser.get("Id");
-    let categoryUri = `/category/${categoryId}`;
+  let routes = [
 
-    authz.verifyOwnership(categoryUri, userId)
-      .then(fetchListsByCategoryId)
-      .then(returnLists)
-      .catch(onError);
+    // Create List
+    ["post", "/logbooks", require("./createLogbook")],
 
-    function fetchListsByCategoryId () {
-      return db.fetchListsByCategoryId(categoryId);
-    }
+    // Delete List
+    ["delete", "/logbook/:logbookId", require("./deleteLogbookById")],
 
-    function returnLists (lists) {
-      res.status(200).send(lists);
-    }
+    // Fetch Lists
+    ["get", "/logbooks/all", require("./fetchAllLogbooks")],
+    ["get", "/logbook/:logbookId", require("./fetchLogbookById")],
 
-    function onError (err) {
-      res.status(500).send({ ErrorMsg: err.message });
-    }
-  }
+    // Change list properties
+    ["put", "/logbook/:logbookId/name", require("./changeLogbookNameById")],
+    ["put", "/logbook/:logbookId/currency", require("./changeLogbookCurrencyById")],
 
+  ];
+
+  routes.forEach(route => {
+    let method = route[0];
+    let uri = route[1];
+    let fn = route[2];
+
+    api[method](uri, api.requireAuth, fn(mymoney));
+  });
 }
 
-module.exports = fetchListsByCatId;
+module.exports = addLogbookRoutes;

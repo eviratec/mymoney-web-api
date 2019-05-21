@@ -14,41 +14,43 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-const v4uuid = require("uuid/v4");
-
-function createCategory (mymoney) {
+function changeLogbookNameById (mymoney) {
 
   const api = mymoney.expressApp;
   const db = mymoney.db;
   const events = mymoney.events;
   const authz = mymoney.authz;
 
-  const Category = db.Category;
-
   return function (req, res) {
-    let categoryId = v4uuid();
-    let category = Category.forge({
-      Id: categoryId,
-      OwnerId: req.authUser.get("Id"),
-      Name: req.body.Name || "New Category",
-      Created: Math.floor(Date.now()/1000),
-    });
+    let logbookId = req.params.logbookId;
+    let userId = req.authUser.get("Id");
+    let logbookUri = `/logbook/${logbookId}`;
 
-    category.save(null, {method: "insert"})
-      .then(onCreateSuccess)
+    authz.verifyOwnership(logbookUri, userId)
+      .then(fetchLogbook)
+      .then(changeLogbookName)
+      .then(returnSuccess)
       .catch(onError);
 
-    function onCreateSuccess (category) {
-      let uri = `/category/${categoryId}`;
-      events.emit("resource:created", uri, req.authUser.get("Id"));
-      res.returnNewObject(category);
+    function fetchLogbook () {
+      return db.fetchLogbookById(logbookId);
     }
 
-    function onError (err) {
-      res.status(400).send({ ErrorMsg: err.message });
+    function changeLogbookName (logbook) {
+      return logbook.save({
+        Name: req.body.newValue || 'My Logbook',
+      });
+    }
+
+    function returnSuccess () {
+      res.status(200).send();
+    }
+
+    function onError () {
+      res.status(400).send();
     }
   }
 
 }
 
-module.exports = createCategory;
+module.exports = changeLogbookNameById;

@@ -17,6 +17,9 @@
 module.exports = function LogbookDb (db) {
   const bookshelf = db._bookshelf;
 
+  /**
+   * Logbook Model
+   */
   const Logbook = bookshelf.Model.extend({
     tableName: "logbooks",
     idAttribute: "Id",
@@ -39,6 +42,9 @@ module.exports = function LogbookDb (db) {
 
   db.Logbook = Logbook;
 
+  /**
+   * Fetch Logbook by ID
+   */
   function fetchLogbookById (id) {
     return Logbook.where({"Id": id, "Deleted": null})
       .fetch({withRelated: ["User", "Lists"]});
@@ -46,6 +52,9 @@ module.exports = function LogbookDb (db) {
 
   db.fetchLogbookById = fetchLogbookById;
 
+  /**
+   * Fetch Logbooks by Owner ID
+   */
   function fetchLogbooksByOwnerId (userId) {
     return Logbook.where({"OwnerId": userId, "Deleted": null})
       .fetchAll();

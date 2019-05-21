@@ -14,33 +14,29 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-function addCategoryRoutes (mymoney) {
+function fetchAllLogbooks (mymoney) {
+
   const api = mymoney.expressApp;
+  const db = mymoney.db;
+  const events = mymoney.events;
+  const authz = mymoney.authz;
 
-  let routes = [
+  return function (req, res) {
+    let ownerId = req.authUser.get("Id");
 
-    // Create List
-    ["post", "/categories", require("./createCategory")],
+    db.fetchLogbooksByOwnerId(ownerId)
+      .then(returnLogbooks)
+      .catch(onError);
 
-    // Delete List
-    ["delete", "/category/:categoryId", require("./deleteCategoryById")],
+    function returnLogbooks (logbooks) {
+      res.status(200).send(logbooks);
+    }
 
-    // Fetch Lists
-    ["get", "/categories/all", require("./fetchAllCategories")],
-    ["get", "/category/:categoryId", require("./fetchCategoryById")],
+    function onError (err) {
+      res.status(500).send({ ErrorMsg: err.message });
+    }
+  }
 
-    // Change list properties
-    ["put", "/category/:categoryId/name", require("./changeCategoryNameById")],
-
-  ];
-
-  routes.forEach(route => {
-    let method = route[0];
-    let uri = route[1];
-    let fn = route[2];
-
-    api[method](uri, api.requireAuth, fn(mymoney));
-  });
 }
 
-module.exports = addCategoryRoutes;
+module.exports = fetchAllLogbooks;

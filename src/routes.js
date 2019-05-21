@@ -17,8 +17,8 @@
 module.exports = function (mymoney) {
 
   const ROUTE_DEFINERS = [
-    "category",
-    "list",
+    "logbook",
+    "transaction",
     "user",
   ];
 

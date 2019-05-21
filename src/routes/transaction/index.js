@@ -14,30 +14,26 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-function addListRoutes (mymoney) {
+function addTransactionRoutes (mymoney) {
   const api = mymoney.expressApp;
 
   let routes = [
 
-    // Create List
-    ["post", "/lists", require("./createList")],
+    // Create Transaction
+    ["post", "/transactions", require("./createTransaction")],
 
-    // Delete List
-    ["delete", "/list/:listId", require("./deleteListById")],
+    // Delete Transaction
+    ["delete", "/transaction/:transactionId", require("./deleteTransactionById")],
 
-    // Fetch Lists
-    ["get", "/lists/all", require("./fetchAllLists")],
-    ["get", "/list/:listId", require("./fetchListById")],
-    ["get", "/list/:parentId/lists", require("./fetchListsByParentId")],
-    ["get", "/category/:categoryId/lists", require("./fetchListsByCatId")],
+    // Fetch Transactions
+    ["get", "/transactions/all", require("./fetchAllTransactions")],
+    ["get", "/transaction/:transactionId", require("./fetchTransactionById")],
+    ["get", "/logbook/:logbookId/transactions", require("./fetchTransactionsByLogbookId")],
 
-    // List Properties
-    ["get", "/list/:listId/details", require("./fetchListDetailsById")],
-
-    // Change list properties
-    ["put", "/list/:listId/title", require("./changeListTitleById")],
-    ["put", "/list/:listId/details", require("./changeListDetailsById")],
-    ["put", "/list/:listId/completed", require("./changeListCompletedById")],
+    // Change Transaction Properties
+    ["put", "/transaction/:transactionId/amount", require("./changeTransactionAmountById")],
+    ["put", "/transaction/:transactionId/summary", require("./changeTransactionSummaryById")],
+    ["put", "/transaction/:transactionId/occurred", require("./changeTransactionOccurredById")],
 
   ];
 
@@ -50,4 +46,4 @@ function addListRoutes (mymoney) {
   });
 }
 
-module.exports = addListRoutes;
+module.exports = addTransactionRoutes;

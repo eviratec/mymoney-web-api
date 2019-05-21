@@ -14,7 +14,7 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-function changeCategoryNameById (mymoney) {
+function deleteTransactionById (mymoney) {
 
   const api = mymoney.expressApp;
   const db = mymoney.db;
@@ -22,23 +22,23 @@ function changeCategoryNameById (mymoney) {
   const authz = mymoney.authz;
 
   return function (req, res) {
-    let categoryId = req.params.categoryId;
+    let transactionId = req.params.transactionId;
     let userId = req.authUser.get("Id");
-    let categoryUri = `/category/${categoryId}`;
+    let transactionUri = `/transaction/${transactionId}`;
 
-    authz.verifyOwnership(categoryUri, userId)
-      .then(fetchCategory)
-      .then(changeCategoryName)
+    authz.verifyOwnership(transactionUri, userId)
+      .then(fetchTransaction)
+      .then(setTransactionDeletedNow)
       .then(returnSuccess)
       .catch(onError);
 
-    function fetchCategory () {
-      return db.fetchCategoryById(categoryId);
+    function fetchTransaction () {
+      return db.fetchTransactionById(transactionId);
     }
 
-    function changeCategoryName (category) {
-      return category.save({
-        Name: req.body.newValue || 'My Category',
+    function setTransactionDeletedNow (transaction) {
+      return transaction.save({
+        Deleted: Math.floor(Date.now()/1000),
       });
     }
 
@@ -53,4 +53,4 @@ function changeCategoryNameById (mymoney) {
 
 }
 
-module.exports = changeCategoryNameById;
+module.exports = deleteTransactionById;

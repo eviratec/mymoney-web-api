@@ -14,7 +14,7 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-function changeListDetailsById (mymoney) {
+function fetchLogbookById (mymoney) {
 
   const api = mymoney.expressApp;
   const db = mymoney.db;
@@ -22,9 +22,27 @@ function changeListDetailsById (mymoney) {
   const authz = mymoney.authz;
 
   return function (req, res) {
-    res.status(200).send();
+    let logbookId = req.params.logbookId;
+    let userId = req.authUser.get("Id");
+
+    authz.verifyOwnership(req.path, userId)
+      .then(fetchLogbook)
+      .then(sendResponse)
+      .catch(onError);
+
+    function fetchLogbook () {
+      return db.fetchLogbookById(logbookId);
+    }
+
+    function sendResponse (logbook) {
+      res.status(200).send(logbook);
+    }
+
+    function onError (err) {
+      res.sendStatus(404);
+    }
   }
 
 }
 
-module.exports = changeListDetailsById;
+module.exports = fetchLogbookById;

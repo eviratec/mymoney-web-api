@@ -14,7 +14,7 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-function fetchListsByParentId (mymoney) {
+function fetchTransactionsByLogbookId (mymoney) {
 
   const api = mymoney.expressApp;
   const db = mymoney.db;
@@ -22,21 +22,21 @@ function fetchListsByParentId (mymoney) {
   const authz = mymoney.authz;
 
   return function (req, res) {
-    let parentId = req.params.parentId;
+    let logbookId = req.params.logbookId;
     let userId = req.authUser.get("Id");
-    let parentListUri = `/list/${parentId}`;
+    let logbookUri = `/logbook/${logbookId}`;
 
-    authz.verifyOwnership(parentListUri, userId)
-      .then(fetchListsByParentId)
-      .then(returnLists)
+    authz.verifyOwnership(logbookUri, userId)
+      .then(fetchTransactionsByLogbookId)
+      .then(returnTransactions)
       .catch(onError);
 
-    function fetchListsByParentId () {
-      return db.fetchListsByParentId(parentId);
+    function fetchTransactionsByLogbookId () {
+      return db.fetchTransactionsByLogbookId(logbookId);
     }
 
-    function returnLists (lists) {
-      res.status(200).send(lists);
+    function returnTransactions (transactions) {
+      res.status(200).send(transactions);
     }
 
     function onError (err) {
@@ -46,4 +46,4 @@ function fetchListsByParentId (mymoney) {
 
 }
 
-module.exports = fetchListsByParentId;
+module.exports = fetchTransactionsByLogbookId;

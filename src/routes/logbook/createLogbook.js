@@ -14,43 +14,44 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-function changeListTitleById (mymoney) {
+const v4uuid = require("uuid/v4");
+
+function createLogbook (mymoney) {
+
+  const DEFAULT_CURRENCY = "usd";
 
   const api = mymoney.expressApp;
   const db = mymoney.db;
   const events = mymoney.events;
   const authz = mymoney.authz;
 
-  return function (req, res) {
-    let listId = req.params.listId;
-    let userId = req.authUser.get("Id");
-    let listUri = `/list/${listId}`;
+  const Logbook = db.Logbook;
 
-    authz.verifyOwnership(listUri, userId)
-      .then(fetchList)
-      .then(changeListTitle)
-      .then(returnSuccess)
+  return function (req, res) {
+    let logbookId = v4uuid();
+    let logbook = Logbook.forge({
+      Id: logbookId,
+      OwnerId: req.authUser.get("Id"),
+      Name: req.body.Name || "New Logbook",
+      Currency: req.body.Currency || DEFAULT_CURRENCY,
+      Created: Math.floor(Date.now()/1000),
+    });
+
+    logbook.save(null, {method: "insert"})
+      .then(onCreateSuccess)
       .catch(onError);
 
-    function fetchList () {
-      return db.fetchListById(listId);
+    function onCreateSuccess (logbook) {
+      let uri = `/logbook/${logbookId}`;
+      events.emit("resource:created", uri, req.authUser.get("Id"));
+      res.returnNewObject(logbook);
     }
 
-    function changeListTitle (list) {
-      return list.save({
-        Title: req.body.newValue || 'My List',
-      });
-    }
-
-    function returnSuccess () {
-      res.status(200).send();
-    }
-
-    function onError () {
-      res.status(400).send();
+    function onError (err) {
+      res.status(400).send({ ErrorMsg: err.message });
     }
   }
 
 }
 
-module.exports = changeListTitleById;
+module.exports = createLogbook;
