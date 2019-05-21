@@ -47,7 +47,7 @@ module.exports = function LogbookDb (db) {
    */
   function fetchLogbookById (id) {
     return Logbook.where({"Id": id, "Deleted": null})
-      .fetch({withRelated: ["User", "Lists"]});
+      .fetch({withRelated: ["User", "Transactions"]});
   }
 
   db.fetchLogbookById = fetchLogbookById;
