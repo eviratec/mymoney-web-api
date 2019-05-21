@@ -41,25 +41,17 @@ function changeTransactionOccurredById (mymoney) {
         return setTransactionOccurredNow();
       }
 
-      if (null === req.body.newValue) {
-        return clearTransactionOccurred();
-      }
-
       if ('number' === typeof req.body.newValue) {
         return transaction.save({
           Occurred: req.body.newValue,
         });
       }
 
+      return Promise.reject(new Error("Invalid new value for Occurred"));
+
       function setTransactionOccurredNow () {
         return transaction.save({
           Occurred: Math.floor(Date.now()/1000),
-        });
-      }
-
-      function clearTransactionOccurred () {
-        return transaction.save({
-          Occurred: null,
         });
       }
     }
