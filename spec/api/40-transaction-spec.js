@@ -212,6 +212,7 @@ describe("TRANSACTION REST API", function () {
         beforeEach(function (done) {
           transactionData = {
             Summary: "Test Transaction",
+            Amount: 1238,
             LogbookId: logbookId,
           };
           $testClient.$post(authorization, `/transactions`, transactionData, function (err, res) {
