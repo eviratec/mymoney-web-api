@@ -53,9 +53,7 @@ function changeTransactionAmountById (mymoney) {
     }
 
     function updateLogbookBalance (logbook) {
-      let min = Math.min(oldAmount, newAmount);
-      let max = Math.max(oldAmount, newAmount);
-      let difference = max - min;
+      let difference = calcDiff(oldAmount, newAmount);
 
       return db._bookshelf.transaction(updateLogbookBalanceTransaction);
 
@@ -78,6 +76,32 @@ function changeTransactionAmountById (mymoney) {
     function onError () {
       res.status(400).send();
     }
+  }
+
+  function calcDiff (oldValue, newValue) {
+    let oldValueIsNeg = oldValue < 0; // old value is less than zero
+    let oldValueIsPos = oldValue > 0; // old value is greater than zero
+    let newValueIsNeg = newValue < 0; // new value is less than zero
+    let newValueIsPos = newValue > 0; // new value is greater than zero
+
+    let negToPos = oldValueIsNeg && newValueIsPos; // convert neg to pos
+    let posToNeg = oldValueIsPos && newValueIsNeg; // convert pos to neg
+
+    let isNeg = oldValueIsNeg && newValueIsNeg; // both numbers are negative
+
+    if (posToNeg) {
+      return 0 - (oldValue + Math.abs(newValue));
+    }
+
+    if (negToPos) {
+      return Math.abs(oldValue) + newValue;
+    }
+
+    if (isNeg) {
+      return Math.abs(oldValue) - Math.abs(newValue);
+    }
+
+    return (0 - oldValue) + newValue;
   }
 
 }
