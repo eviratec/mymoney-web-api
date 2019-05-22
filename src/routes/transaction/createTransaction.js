@@ -27,6 +27,7 @@ function createTransaction (mymoney) {
 
   return function (req, res) {
     let now = Math.floor(Date.now()/1000);
+    let amount = Number(req.body.Amount || 0);
     let occurred = req.body.Occurred;
     let transactionId = v4uuid();
     let transaction;
@@ -38,18 +39,44 @@ function createTransaction (mymoney) {
       OwnerId: req.authUser.get("Id"),
       LogbookId: req.body.LogbookId || null,
       Summary: req.body.Summary || "New Transaction",
-      Amount: req.body.Amount || 0,
+      Amount: amount,
       Occurred: occurred,
       Created: now,
     });
 
     transaction.save(null, {method: "insert"})
-      .then(onCreateSuccess)
+      .then(emitResourceCreatedEvent)
+      .then(fetchRelatedLogbook)
+      .then(updateLogbookBalance)
+      .then(returnTransaction)
       .catch(onError);
 
-    function onCreateSuccess (transaction) {
+    function emitResourceCreatedEvent (transaction) {
       let uri = `/transaction/${transactionId}`;
       events.emit("resource:created", uri, req.authUser.get("Id"));
+      return transaction;
+    }
+
+    function fetchRelatedLogbook (transaction) {
+      return transaction.related('Logbook').fetch();
+    }
+
+    function updateLogbookBalance (logbook) {
+      return db._bookshelf.transaction(updateLogbookBalanceTransaction);
+
+      function updateLogbookBalanceTransaction (t) {
+        return db.Logbook.where({ Id: logbook.get('Id') })
+          .query(q => q.forUpdate())
+          .fetch({ transacting: t })
+          .then(logbook => {
+            let initialBalance = logbook.attributes.Balance;
+            logbook.set('Balance', initialBalance + amount);
+            return logbook.save(null, { transacting: t });
+          });
+      }
+    }
+
+    function returnTransaction () {
       res.returnNewObject(transaction);
     }
 
