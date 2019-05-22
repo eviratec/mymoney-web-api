@@ -22,6 +22,8 @@ function deleteTransactionById (mymoney) {
   const authz = mymoney.authz;
 
   return function (req, res) {
+    let transactionAmount;
+
     let transactionId = req.params.transactionId;
     let userId = req.authUser.get("Id");
     let transactionUri = `/transaction/${transactionId}`;
@@ -29,6 +31,8 @@ function deleteTransactionById (mymoney) {
     authz.verifyOwnership(transactionUri, userId)
       .then(fetchTransaction)
       .then(setTransactionDeletedNow)
+      .then(fetchRelatedLogbook)
+      .then(updateLogbookBalance)
       .then(returnSuccess)
       .catch(onError);
 
@@ -37,9 +41,29 @@ function deleteTransactionById (mymoney) {
     }
 
     function setTransactionDeletedNow (transaction) {
+      transactionAmount = transaction.get('Amount');
       return transaction.save({
         Deleted: Math.floor(Date.now()/1000),
       });
+    }
+
+    function fetchRelatedLogbook (transaction) {
+      return transaction.related('Logbook').fetch();
+    }
+
+    function updateLogbookBalance (logbook) {
+      return db._bookshelf.transaction(updateLogbookBalanceTransaction);
+
+      function updateLogbookBalanceTransaction (t) {
+        return db.Logbook.where({ Id: logbook.get('Id') })
+          .query(q => q.forUpdate())
+          .fetch({ transacting: t })
+          .then(logbook => {
+            let initialBalance = logbook.attributes.Balance;
+            logbook.set('Balance', initialBalance - transactionAmount);
+            return logbook.save(null, { transacting: t });
+          });
+      }
     }
 
     function returnSuccess () {
