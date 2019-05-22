@@ -22,6 +22,9 @@ function changeTransactionAmountById (mymoney) {
   const authz = mymoney.authz;
 
   return function (req, res) {
+    let oldAmount;
+
+    let newAmount = Number(req.body.newValue || 0);
     let transactionId = req.params.transactionId;
     let userId = req.authUser.get("Id");
     let transactionUri = `/transaction/${transactionId}`;
@@ -29,6 +32,8 @@ function changeTransactionAmountById (mymoney) {
     authz.verifyOwnership(transactionUri, userId)
       .then(fetchTransaction)
       .then(changeTransactionAmount)
+      .then(fetchRelatedLogbook)
+      .then(updateLogbookBalance)
       .then(returnSuccess)
       .catch(onError);
 
@@ -37,9 +42,33 @@ function changeTransactionAmountById (mymoney) {
     }
 
     function changeTransactionAmount (transaction) {
+      oldAmount = transaction.get('Amount');
       return transaction.save({
-        Amount: req.body.newValue || 0,
+        Amount: newAmount,
       });
+    }
+
+    function fetchRelatedLogbook (transaction) {
+      return transaction.related('Logbook').fetch();
+    }
+
+    function updateLogbookBalance (logbook) {
+      let min = Math.min(oldAmount, newAmount);
+      let max = Math.max(oldAmount, newAmount);
+      let difference = max - min;
+
+      return db._bookshelf.transaction(updateLogbookBalanceTransaction);
+
+      function updateLogbookBalanceTransaction (t) {
+        return db.Logbook.where({ Id: logbook.get('Id') })
+          .query(q => q.forUpdate())
+          .fetch({ transacting: t })
+          .then(logbook => {
+            let initialBalance = logbook.attributes.Balance;
+            logbook.set('Balance', initialBalance + difference);
+            return logbook.save(null, { transacting: t });
+          });
+      }
     }
 
     function returnSuccess () {
