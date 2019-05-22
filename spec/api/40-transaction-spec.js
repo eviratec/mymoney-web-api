@@ -170,6 +170,19 @@ describe("TRANSACTION REST API", function () {
           });
         });
 
+        it("UPDATES THE LOGBOOK'S BALANCE PROPERTY", function (done) {
+          $testClient.$post(authorization, `/transactions`, transactionData, function (err, res) {
+            let transactionId = res.d.Id;
+            $testClient.$get(authorization, `/logbook/${logbookId}`, function (err, res) {
+              expect(res.statusCode).toBe(200);
+              expect(res.d).toEqual(jasmine.objectContaining({
+                "Balance": 1238,
+              }));
+              done();
+            });
+          });
+        });
+
         it("ADDS THE TRANSACTION TO THE LOGBOOK'S LIST OF TRANSACTIONS", function (done) {
           $testClient.$post(authorization, `/transactions`, transactionData, function (err, res) {
             let transactionId = res.d.Id;
@@ -333,6 +346,21 @@ describe("TRANSACTION REST API", function () {
             });
           });
 
+          it("UPDATES THE LOGBOOK'S BALANCE PROPERTY CORRECTLY", function (done) {
+            let data = {
+              newValue: 1369,
+            };
+            $testClient.$put(authorization, `/transaction/${transactionId}/amount`, data, function (err, res) {
+              $testClient.$get(authorization, `/logbook/${logbookId}`, function (err, res) {
+                expect(res.statusCode).toBe(200);
+                expect(res.d).toEqual(jasmine.objectContaining({
+                  "Balance": 1369,
+                }));
+                done();
+              });
+            });
+          });
+
         });
 
       });
@@ -397,6 +425,18 @@ describe("TRANSACTION REST API", function () {
                       "Id": transactionId,
                     }),
                   ]));
+                  done();
+                });
+              });
+            });
+
+            it("UPDATES THE LOGBOOK'S BALANCE PROPERTY", function (done) {
+              $testClient.$delete(authorization, `/transaction/${transactionId}`, function (err, res) {
+                $testClient.$get(authorization, `/logbook/${logbookId}`, function (err, res) {
+                  expect(res.statusCode).toBe(200);
+                  expect(res.d).toEqual(jasmine.objectContaining({
+                    "Balance": 0,
+                  }));
                   done();
                 });
               });
