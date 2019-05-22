@@ -325,41 +325,265 @@ describe("TRANSACTION REST API", function () {
 
         describe("changing the value for the 'Amount' property", function () {
 
-          it("RETURNS `HTTP/1.1 200 OK`", function (done) {
-            let data = {
-              newValue: 1369,
+          describe("to a higher positive number", function () {
+
+            it("RETURNS `HTTP/1.1 200 OK`", function (done) {
+              let data = {
+                newValue: 1369,
+              };
+              $testClient.$put(authorization, `/transaction/${transactionId}/amount`, data, function (err, res) {
+                expect(res.statusCode).toBe(200);
+                done();
+              });
+            });
+
+            it("UPDATES THE VALUE CORRECTLY", function (done) {
+              let data = {
+                newValue: 1369,
+              };
+              $testClient.$put(authorization, `/transaction/${transactionId}/amount`, data, function (err, res) {
+                $testClient.$get(authorization, `/transaction/${transactionId}`, function (err, res) {
+                  expect(res.d.Amount).toBe(1369);
+                  done();
+                });
+              });
+            });
+
+            it("UPDATES THE LOGBOOK'S BALANCE PROPERTY CORRECTLY", function (done) {
+              let data = {
+                newValue: 1369,
+              };
+              $testClient.$put(authorization, `/transaction/${transactionId}/amount`, data, function (err, res) {
+                $testClient.$get(authorization, `/logbook/${logbookId}`, function (err, res) {
+                  expect(res.statusCode).toBe(200);
+                  expect(res.d).toEqual(jasmine.objectContaining({
+                    "Balance": 1369,
+                  }));
+                  done();
+                });
+              });
+            });
+
+          });
+
+          describe("to a lower positive number", function () {
+
+            it("RETURNS `HTTP/1.1 200 OK`", function (done) {
+              let data = {
+                newValue: 100,
+              };
+              $testClient.$put(authorization, `/transaction/${transactionId}/amount`, data, function (err, res) {
+                expect(res.statusCode).toBe(200);
+                done();
+              });
+            });
+
+            it("UPDATES THE VALUE CORRECTLY", function (done) {
+              let data = {
+                newValue: 100,
+              };
+              $testClient.$put(authorization, `/transaction/${transactionId}/amount`, data, function (err, res) {
+                $testClient.$get(authorization, `/transaction/${transactionId}`, function (err, res) {
+                  expect(res.d.Amount).toBe(100);
+                  done();
+                });
+              });
+            });
+
+          });
+
+        });
+
+      });
+
+      describe("updating transaction amount", function () {
+
+        describe("positive numbers (credits)", function () {
+
+          let transactionId;
+          let transactionData;
+
+          beforeEach(function (done) {
+            transactionData = {
+              Summary: "Test Transaction",
+              Amount: 1238,
+              LogbookId: logbookId,
             };
-            $testClient.$put(authorization, `/transaction/${transactionId}/amount`, data, function (err, res) {
-              expect(res.statusCode).toBe(200);
+            $testClient.$post(authorization, `/transactions`, transactionData, function (err, res) {
+              transactionId = res.d.Id;
               done();
             });
           });
 
-          it("UPDATES THE VALUE CORRECTLY", function (done) {
-            let data = {
-              newValue: 1369,
-            };
-            $testClient.$put(authorization, `/transaction/${transactionId}/amount`, data, function (err, res) {
-              $testClient.$get(authorization, `/transaction/${transactionId}`, function (err, res) {
-                expect(res.d.Amount).toBe(1369);
-                done();
+          describe("updating the transaction amount to a higher positive number", function () {
+
+            it("UPDATES THE LOGBOOK'S BALANCE PROPERTY CORRECTLY", function (done) {
+              let data = {
+                newValue: 2345,
+              };
+              $testClient.$put(authorization, `/transaction/${transactionId}/amount`, data, function (err, res) {
+                $testClient.$get(authorization, `/logbook/${logbookId}`, function (err, res) {
+                  expect(res.statusCode).toBe(200);
+                  expect(res.d).toEqual(jasmine.objectContaining({
+                    "Balance": 2345,
+                  }));
+                  done();
+                });
               });
+            });
+
+          });
+
+          describe("updating the transaction amount to a lower positive number", function () {
+
+            it("UPDATES THE LOGBOOK'S BALANCE PROPERTY CORRECTLY", function (done) {
+              let data = {
+                newValue: 234,
+              };
+              $testClient.$put(authorization, `/transaction/${transactionId}/amount`, data, function (err, res) {
+                $testClient.$get(authorization, `/logbook/${logbookId}`, function (err, res) {
+                  expect(res.statusCode).toBe(200);
+                  expect(res.d).toEqual(jasmine.objectContaining({
+                    "Balance": 234,
+                  }));
+                  done();
+                });
+              });
+            });
+
+          });
+
+          describe("updating the transaction amount to a negative number from a positive number", function () {
+
+            it("UPDATES THE LOGBOOK'S BALANCE PROPERTY CORRECTLY", function (done) {
+              let data = {
+                newValue: -413,
+              };
+              $testClient.$put(authorization, `/transaction/${transactionId}/amount`, data, function (err, res) {
+                $testClient.$get(authorization, `/logbook/${logbookId}`, function (err, res) {
+                  expect(res.statusCode).toBe(200);
+                  expect(res.d).toEqual(jasmine.objectContaining({
+                    "Balance": -413,
+                  }));
+                  done();
+                });
+              });
+            });
+
+          });
+
+          describe("updating the transaction amount to zero", function () {
+
+            it("UPDATES THE LOGBOOK'S BALANCE PROPERTY CORRECTLY", function (done) {
+              let data = {
+                newValue: 0,
+              };
+              $testClient.$put(authorization, `/transaction/${transactionId}/amount`, data, function (err, res) {
+                $testClient.$get(authorization, `/logbook/${logbookId}`, function (err, res) {
+                  expect(res.statusCode).toBe(200);
+                  expect(res.d).toEqual(jasmine.objectContaining({
+                    "Balance": 0,
+                  }));
+                  done();
+                });
+              });
+            });
+
+          });
+
+        });
+
+        describe("negative numbers (debits)", function () {
+
+          let transactionId;
+          let transactionData;
+
+          beforeEach(function (done) {
+            transactionData = {
+              Summary: "Test Transaction",
+              Amount: -1238,
+              LogbookId: logbookId,
+            };
+            $testClient.$post(authorization, `/transactions`, transactionData, function (err, res) {
+              transactionId = res.d.Id;
+              done();
             });
           });
 
-          it("UPDATES THE LOGBOOK'S BALANCE PROPERTY CORRECTLY", function (done) {
-            let data = {
-              newValue: 1369,
-            };
-            $testClient.$put(authorization, `/transaction/${transactionId}/amount`, data, function (err, res) {
-              $testClient.$get(authorization, `/logbook/${logbookId}`, function (err, res) {
-                expect(res.statusCode).toBe(200);
-                expect(res.d).toEqual(jasmine.objectContaining({
-                  "Balance": 1369,
-                }));
-                done();
+          describe("updating the transaction amount to a higher negative number", function () {
+
+            it("UPDATES THE LOGBOOK'S BALANCE PROPERTY CORRECTLY", function (done) {
+              let data = {
+                newValue: -2345,
+              };
+              $testClient.$put(authorization, `/transaction/${transactionId}/amount`, data, function (err, res) {
+                $testClient.$get(authorization, `/logbook/${logbookId}`, function (err, res) {
+                  expect(res.statusCode).toBe(200);
+                  expect(res.d).toEqual(jasmine.objectContaining({
+                    "Balance": -2345,
+                  }));
+                  done();
+                });
               });
             });
+
+          });
+
+          describe("updating the transaction amount to a lower negative number", function () {
+
+            it("UPDATES THE LOGBOOK'S BALANCE PROPERTY CORRECTLY", function (done) {
+              let data = {
+                newValue: -123,
+              };
+              $testClient.$put(authorization, `/transaction/${transactionId}/amount`, data, function (err, res) {
+                $testClient.$get(authorization, `/logbook/${logbookId}`, function (err, res) {
+                  expect(res.statusCode).toBe(200);
+                  expect(res.d).toEqual(jasmine.objectContaining({
+                    "Balance": -123,
+                  }));
+                  done();
+                });
+              });
+            });
+
+          });
+
+          describe("updating the transaction amount to a positive number from a negative number", function () {
+
+            it("UPDATES THE LOGBOOK'S BALANCE PROPERTY CORRECTLY", function (done) {
+              let data = {
+                newValue: 350,
+              };
+              $testClient.$put(authorization, `/transaction/${transactionId}/amount`, data, function (err, res) {
+                $testClient.$get(authorization, `/logbook/${logbookId}`, function (err, res) {
+                  expect(res.statusCode).toBe(200);
+                  expect(res.d).toEqual(jasmine.objectContaining({
+                    "Balance": 350,
+                  }));
+                  done();
+                });
+              });
+            });
+
+          });
+
+          describe("updating the transaction amount to zero", function () {
+
+            it("UPDATES THE LOGBOOK'S BALANCE PROPERTY CORRECTLY", function (done) {
+              let data = {
+                newValue: 0,
+              };
+              $testClient.$put(authorization, `/transaction/${transactionId}/amount`, data, function (err, res) {
+                $testClient.$get(authorization, `/logbook/${logbookId}`, function (err, res) {
+                  expect(res.statusCode).toBe(200);
+                  expect(res.d).toEqual(jasmine.objectContaining({
+                    "Balance": 0,
+                  }));
+                  done();
+                });
+              });
+            });
+
           });
 
         });
