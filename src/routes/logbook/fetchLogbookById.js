@@ -39,6 +39,8 @@ function fetchLogbookById (mymoney) {
     }
 
     function onError (err) {
+      console.log(err);
+      console.log(err.stack);
       res.sendStatus(404);
     }
   }

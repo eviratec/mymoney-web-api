@@ -48,6 +48,8 @@ function createLogbook (mymoney) {
     }
 
     function onError (err) {
+      console.log(err);
+      console.log(err.stack);
       res.status(400).send({ ErrorMsg: err.message });
     }
   }

@@ -30,24 +30,27 @@ describe("AUTHENTICATION REST API", function () {
 
     beforeEach(function (done) {
 
-      api = jasmine.startTestApi();
-      $testClient = jasmine.createTestClient();
+      jasmine.testApi.init(function (d) {
+        api = d.api;
+        $testClient = jasmine.createTestClient(d.port);
 
-      validLogin = $testClient.uniqueLogin();
-      validPassword = $testClient.generatePassword();
+        validLogin = $testClient.uniqueLogin();
+        validPassword = $testClient.generatePassword();
 
-      invalidLogin = $testClient.uniqueLogin();
-      invalidPassword = $testClient.generatePassword();
+        invalidLogin = $testClient.uniqueLogin();
+        invalidPassword = $testClient.generatePassword();
 
-      $testClient.signup(validLogin, validPassword, function (err, res) {
-        if (err) return done(err);
-        done();
+        $testClient.signup(validLogin, validPassword, function (err, res) {
+          if (err) return done(err);
+          done();
+        });
       });
 
     });
 
     afterEach(function (done) {
-      api.server.close(done);
+      // api.server.close(done);
+      done();
     });
 
     it("RETURNS `HTTP/1.1 400 Bad Request` WHEN THE LOGIN IS INVALID", function (done) {

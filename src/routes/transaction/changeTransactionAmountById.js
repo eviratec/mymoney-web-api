@@ -73,7 +73,9 @@ function changeTransactionAmountById (mymoney) {
       res.status(200).send();
     }
 
-    function onError () {
+    function onError (err) {
+      console.log(err);
+      console.log(err.stack);
       res.status(400).send();
     }
   }

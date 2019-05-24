@@ -85,6 +85,8 @@ function attemptAuth (mymoney) {
 
     // Return HTTP/1.1 500 - Internal Server Error
     function returnServerError (err) {
+      console.log(err);
+      console.log(err.stack);
       res.status(500).send({ ErrorMsg: err.message });
     }
 

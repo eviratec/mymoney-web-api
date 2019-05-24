@@ -30,23 +30,29 @@ describe("USER REST API", function () {
 
     beforeEach(function (done) {
 
-      api = jasmine.startTestApi();
-      $testClient = jasmine.createTestClient();
+      jasmine.testApi.init(function (d) {
+        api = d.api;
+        $testClient = jasmine.createTestClient(d.port);
 
-      login = $testClient.uniqueLogin();
-      password = $testClient.generatePassword();
+        api = jasmine.testApi.api;
+        $testClient = jasmine.createTestClient(jasmine.testApi.port);
 
-      $testClient.initUser(login, password, function (err, d) {
-        if (err) return done(err);
-        userId = d.UserId;
-        authorization = d.TokenKey;
-        done();
+        login = $testClient.uniqueLogin();
+        password = $testClient.generatePassword();
+
+        $testClient.initUser(login, password, function (err, d) {
+          if (err) return done(err);
+          userId = d.UserId;
+          authorization = d.TokenKey;
+          done();
+        });
       });
 
     });
 
     afterEach(function (done) {
-      api.server.close(done);
+      // api.server.close(done);
+      done();
     });
 
     it("RETURNS `HTTP/1.1 403 Forbidden` WHEN `Authorization` HEADER IS NOT PROVIDED", function (done) {

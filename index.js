@@ -16,7 +16,7 @@
 
 const MyMoney = require("./src/app");
 
-module.exports = function (port, verbose) {
+module.exports = function (port, verbose, onStarted) {
   let mymoney = new MyMoney();
 
   mymoney.server = mymoney.expressApp.listen(port, function () {
@@ -30,6 +30,8 @@ module.exports = function (port, verbose) {
         // console.log(e);
       }
     });
+    
+    'function' === typeof onStarted && onStarted(port);
   });
 
   return mymoney;

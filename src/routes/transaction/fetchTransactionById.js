@@ -38,7 +38,9 @@ function fetchTransactionById (mymoney) {
       res.status(200).send(category);
     }
 
-    function onError () {
+    function onError (err) {
+      console.log(err);
+      console.log(err.stack);
       res.sendStatus(404);
     }
   }

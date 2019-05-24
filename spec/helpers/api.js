@@ -253,13 +253,45 @@
     }
   }
 
-  jasmine.startTestApi = function (port) {
-    return TestApi(port || DEFAULT_TEST_API_PORT);
+  jasmine.randomPort = function () {
+    return '1'+(String(Math.ceil(Math.random()*1000))).padStart(4, '0');
+  };
+
+  jasmine.startTestApi = function (port, verbose, onStarted) {
+    let p = port || DEFAULT_TEST_API_PORT;
+    return TestApi(p, verbose, onStarted);
   }
 
   jasmine.createTestClient = function (port) {
     let testClient = new ApiTestClient(port);
     return testClient;
   }
+
+  jasmine.testApi = (function () {
+    let isInit = false;
+    let d = {
+      port: null,
+      api: null,
+    }
+
+    return {
+      init: init,
+    };
+
+    function init (onComplete) {
+      if (true === isInit) {
+        onComplete(d);
+        return;
+      }
+      let testPort = jasmine.randomPort();
+      let testApi = jasmine.startTestApi(testPort, true, setInitComplete);
+      function setInitComplete () {
+        isInit = true;
+        d.port = testPort;
+        d.api = testApi;
+        onComplete(d);
+      }
+    }
+  })();
 
 })(jasmine);

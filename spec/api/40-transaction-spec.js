@@ -28,23 +28,27 @@ describe("TRANSACTION REST API", function () {
 
   beforeEach(function (done) {
 
-    api = jasmine.startTestApi();
-    $testClient = jasmine.createTestClient();
+    jasmine.testApi.init(function (d) {
+      api = d.api;
+      $testClient = jasmine.createTestClient(d.port);
 
-    login = $testClient.uniqueLogin();
-    password = $testClient.generatePassword();
+      login = $testClient.uniqueLogin();
+      password = $testClient.generatePassword();
 
-    $testClient.initUser(login, password, function (err, d) {
-      if (err) return done(err);
-      userId = d.UserId;
-      authorization = d.TokenKey;
-      done();
+      $testClient.initUser(login, password, function (err, d) {
+        if (err) return done(err);
+        userId = d.UserId;
+        authorization = d.TokenKey;
+        done();
+      });
+
     });
 
   });
 
   afterEach(function (done) {
-    api.server.close(done);
+    // api.server.close(done);
+    done();
   });
 
   describe("/transactions", function () {
@@ -75,6 +79,44 @@ describe("TRANSACTION REST API", function () {
 
         done();
       });
+    });
+
+    describe("createTransaction <POST> performance", function () {
+
+      describe("50 simultaneous requests", function () {
+
+        it("RETURNS `HTTP/1.1 200 OK` WHEN `Authorization` HEADER IS PROVIDED", function (done) {
+          let x = [];
+          for (let i = 0; i < 500; i++) {
+            x.push(new Promise((resolve, reject) => {
+              $testClient.$post(authorization, `/transactions`, transactionData, function (err, res) {
+                if (err) {
+                  reject(err);
+                  return;
+                }
+                resolve(res);
+              });
+            }));
+          }
+          Promise.all(x)
+            .then(resolve)
+            .catch(handleError);
+
+          function resolve (res) {
+            for (let i = 0; i < 500; i++) {
+              expect(res[i].statusCode).toBe(200);
+            }
+            done();
+          }
+
+          function handleError (err) {
+            expect(err).toBe(null);
+            done();
+          }
+        });
+
+      });
+
     });
 
     describe("createTransaction <POST> with valid parameters", function () {

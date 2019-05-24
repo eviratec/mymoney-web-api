@@ -24,13 +24,17 @@ describe("SIGNUP REST API", function () {
     let $testClient;
 
 
-    beforeEach(function () {
-      api = jasmine.startTestApi();
-      $testClient = jasmine.createTestClient();
+    beforeEach(function (done) {
+      jasmine.testApi.init(function (d) {
+        api = d.api;
+        $testClient = jasmine.createTestClient(d.port);
+        done();
+      });
     });
 
     afterEach(function (done) {
-      api.server.close(done);
+      // api.server.close(done);
+      done();
     });
 
     it("RETURNS `HTTP/1.1 202 Accepted` ON SUCCESS", function (done) {
